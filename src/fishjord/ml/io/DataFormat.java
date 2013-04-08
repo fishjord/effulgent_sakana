@@ -9,5 +9,5 @@ package fishjord.ml.io;
  * @author Jordan Fish <fishjord at msu.edu>
  */
 public enum DataFormat {
-    binary, whitespace, csv, svm
+    binary, whitespace, csv, svm, yadt
 }

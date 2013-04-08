@@ -13,6 +13,7 @@ import fishjord.ml.io.SVMSparseReader;
 import fishjord.ml.io.SVMSparseWriter;
 import fishjord.ml.io.TextDataReader;
 import fishjord.ml.io.TextDataWriter;
+import fishjord.ml.io.YaDTDataWriter;
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.File;
@@ -112,6 +113,8 @@ public class IOUtils {
             return new SVMSparseWriter(dataFile);
         } else if(format == DataFormat.binary) {
             return new BinaryDataWriter(dataFile);
+        } else if(format == DataFormat.yadt) {
+            return new YaDTDataWriter(dataFile);
         } else {
             throw new IOException("Unknown file format '" + format + "'");
         }

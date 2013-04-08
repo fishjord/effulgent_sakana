@@ -10,6 +10,7 @@ import fishjord.ml.io.DataReader;
 import fishjord.ml.io.DataWriter;
 import fishjord.ml.utils.IOUtils;
 import java.io.IOException;
+import java.util.Arrays;
 
 /**
  *
@@ -19,7 +20,7 @@ public class Convert {
 
     private static void printUsageAndExit(String err) {
         System.err.println("USAGE: Convert <outformat> <infile> <outfile>");
-        System.err.println("\tformats: csv, whitespace, svm, binary");
+        System.err.println("\tformats: " + Arrays.asList(DataFormat.values()));
         System.err.println("Error: " + err);
         System.exit(1);
     }
