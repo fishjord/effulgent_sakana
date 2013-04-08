@@ -4,10 +4,12 @@
  */
 package fishjord.ml.io;
 
+import java.io.BufferedOutputStream;
+import java.io.DataOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.util.Arrays;
 
 /**
  * Format:
@@ -26,18 +28,20 @@ public class BinaryDataWriter implements DataWriter {
 
     public static final int MAGIC = 1785097580;  //FOURCC = jfml
     public static final int HEADER_SIZE = 16;
-    private RandomAccessFile dataOut;
+    private DataOutputStream dataOut;
     private int numFeatures = -1;
     private int numPatterns = 0;
     private boolean labelsPresent;
+    private final File outFile;
 
     public BinaryDataWriter(File dataFile) throws IOException {
-        dataOut = new RandomAccessFile(dataFile, "rw");
+        dataOut = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(dataFile)));
         dataOut.writeInt(MAGIC);  //Magic number
         dataOut.writeByte(1);    //Version number
         dataOut.writeByte(0);    //Labels present?
         dataOut.writeInt(Integer.MIN_VALUE); //num patterns
         dataOut.writeShort(Short.MIN_VALUE); //num features
+        outFile = dataFile;
     }
 
     @Override
@@ -67,16 +71,17 @@ public class BinaryDataWriter implements DataWriter {
 
     @Override
     public void close() throws IOException {
-        dataOut.seek(5);
+        dataOut.close();
+
+        RandomAccessFile rewrite = new RandomAccessFile(outFile, "rw");
+        rewrite.seek(5);
         if(labelsPresent) {
-            dataOut.writeByte(1);
+            rewrite.writeByte(1);
         } else {
-            dataOut.writeByte(0);
+            rewrite.writeByte(0);
         }
 
-        dataOut.writeInt(numPatterns);
-        dataOut.writeShort(numFeatures);
-
-        dataOut.close();
+        rewrite.writeInt(numPatterns);
+        rewrite.writeShort(numFeatures);
     }
 }
