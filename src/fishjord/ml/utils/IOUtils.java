@@ -9,6 +9,7 @@ import fishjord.ml.io.BinaryDataWriter;
 import fishjord.ml.io.DataFormat;
 import fishjord.ml.io.DataReader;
 import fishjord.ml.io.DataWriter;
+import fishjord.ml.io.SVMSparseReader;
 import fishjord.ml.io.SVMSparseWriter;
 import fishjord.ml.io.TextDataReader;
 import fishjord.ml.io.TextDataWriter;
@@ -19,6 +20,7 @@ import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 
 /**
  *
@@ -62,7 +64,10 @@ public class IOUtils {
         } else if(labelFile != null) {
             throw new IOException("Label file not expected with format '" + format + "'");
         } else if(format == DataFormat.svm) {
-            throw new IOException("I don't support reading svm files at this time");
+            BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
+            System.err.println("Number of features in libsvm file: ");
+            int numFeatures = Integer.valueOf(in.readLine());
+            return new SVMSparseReader(dataFile, numFeatures);
         } else if(format == DataFormat.binary) {
             return new BinaryDataReader(dataFile);
         } else {
@@ -80,6 +85,8 @@ public class IOUtils {
             return DataFormat.binary;
         } else if(s.contains(",")) {
             return DataFormat.csv;
+        } else if(s.contains(":")) {
+            return DataFormat.svm;
         } else {
             return DataFormat.whitespace;
         }

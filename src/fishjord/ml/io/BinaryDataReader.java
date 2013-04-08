@@ -4,12 +4,13 @@
  */
 package fishjord.ml.io;
 
+import java.io.BufferedInputStream;
 import java.io.DataInputStream;
 import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.Arrays;
+import java.io.InputStream;
 
 /**
  * Format:
@@ -36,11 +37,17 @@ public class BinaryDataReader implements DataReader {
     private final boolean labelsPresent;
 
     public BinaryDataReader(File dataFile) throws IOException {
-        dataStream = new DataInputStream(new FileInputStream(dataFile));
+        this(new FileInputStream(dataFile));
+    }
+    public BinaryDataReader(InputStream is) throws IOException {
+        if(!(is instanceof BufferedInputStream)) {
+            is = new BufferedInputStream(is);
+        }
+        this.dataStream = new DataInputStream(is);
 
         int magic = dataStream.readInt();
         if(magic != BinaryDataWriter.MAGIC || dataStream.readByte() != 1) {
-            throw new IOException(dataFile + " doesn't look like a file I know how to parse");
+            throw new IOException("Bad input file format");
         }
         labelsPresent = dataStream.readByte() == 1;
         numPatterns = dataStream.readInt();
