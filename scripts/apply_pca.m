@@ -28,10 +28,10 @@ for i = 1:length(eigvalues)
     if ((eig_sum / eigvalue_sum) > variance_retained)
         printf('%d eigenvalues account for %f%% of the variance\n', ...
                i, sum(eigvalues(1:i)) / eigvalue_sum * 100);
-        eig_vectors = p(1:i);
-        pca_data = ( (data - repmat(c, size(data,1), 1) ) * p ...
+        eig_vectors = p(:, 1:i);
+        pca_data = ( (data - repmat(c, size(data,1), 1) ) * eig_vectors ...
                      );
-        pca_out = strcat(arg_list{2}, ".pca_", num2str(i), ".txt");
+        pca_out = strcat(arg_list{1}, ".pca_", num2str(i), ".txt");
         dlmwrite(pca_out, pca_data, '\t');        
         break;
     endif

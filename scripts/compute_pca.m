@@ -1,4 +1,4 @@
-#!/usr/local/bin/octave -qf
+#!/scratch/fishjord/apps/octave-3.6.4/run-octave -qf
 
 function [p, c, D] = pca(X, d)
 % Perform PCA on the data set X.
