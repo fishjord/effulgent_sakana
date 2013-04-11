@@ -2,8 +2,8 @@
 
 import sys
 
-if len(sys.argv) != 3:
-    print >>sys.stderr, "USAGE: convert_and_sample.py <input_patterns> <labels>"
+if len(sys.argv) != 2 and len(sys.argv) != 3:
+    print >>sys.stderr, "USAGE: convert_and_sample.py <input_patterns> [labels]"
     sys.exit(1)
 
 def write_pattern(pattern, label, out):
@@ -20,11 +20,20 @@ def write_pattern(pattern, label, out):
 def read_patterns(fname, label_file):
     num_features = -1
     data_stream = open(fname)
-    label_stream = open(label_file)
+    if label_file != None:
+        label_stream = open(label_file)
+    else:
+        label_stream = None
 
     while True:
         line = data_stream.readline()
-        label = label_stream.readline()
+        if label_stream == None:
+            if line == "":
+                label = ""
+            else:
+                label = "-2"
+        else:
+            label = label_stream.readline()
 
         if line == "" or label == "":
             if line != "" or label != "":
@@ -43,5 +52,10 @@ def read_patterns(fname, label_file):
         
         yield lexemes, label.strip()
 
-for pattern, label in read_patterns(sys.argv[1], sys.argv[2]):
+if len(sys.argv) == 2:
+    label_file = None
+else:
+    label_file = sys.argv[2]
+
+for pattern, label in read_patterns(sys.argv[1], label_file):
     write_pattern(pattern, label, sys.stdout)
