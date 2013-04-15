@@ -3,62 +3,90 @@
 import sys
 import re
 import glob
+import argparse
+import random
 
-if len(sys.argv) != 2 and len(sys.argv) != 3:
-    print >>sys.stderr, "combine_experts.py <expert_prediction_stems> [labels]"
-    sys.exit(1)
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--labels", dest="label_file", help="Label file")
+    parser.add_argument("--max-experts", dest="max_experts", help="Max expert per classifier", type=int)
+    parser.add_argument("--csv", action="store_true", help="Export to csv and names instead of arff")
+    parser.add_argument("expert_stem", nargs="+")
 
-regex = re.compile("[^0-9]+")
-stem = sys.argv[1]
-if len(sys.argv) == 3:
-    label_stream = open(sys.argv[2])
-else:
-    label_stream = None
+    args = parser.parse_args()
 
-attr_cv = "{%s}" % (",".join([str(x) for x in range(1, 165)]))
-
-print "@RELATION %s" % stem
-print
-
-expert_prediction_streams = {}
-for f in glob.glob(stem + "*.txt"):
-    i = int(regex.sub("", f))
-    expert_prediction_streams[i] = open(f)
-
-sorted_expert_ids = sorted(expert_prediction_streams.keys())
-print >>sys.stderr, "Sorted expert ids: %s" % sorted_expert_ids
-
-for i in sorted_expert_ids:
-    print "@ATTRIBUTE expert_%s %s" % (i, attr_cv)
-
-print "@ATTRIBUTE label %s" % attr_cv
-print
-print "@data"
-
-last = False
-while True:
-    s = []
-    for i in sorted_expert_ids:
-        l = expert_prediction_streams[i].readline()
-        if l == "":
-            if not last and len(s) != 0:
-                raise IOError("Not all the files had the same number of predictions in them...")
-            else:
-                last = True
-        else:
-            s.append(l.strip())
-
-    if label_stream == None:
-        s.append("-2")
+    if args.label_file:
+        label_stream = open(args.label_file)
     else:
-        l = label_stream.readline()
-        if l == "" and not last:
-            raise IOError("Label file had more labels in it than predictions")
+        label_stream = None
+
+    regex = re.compile("[^0-9]+")
+
+    attr_cv = "{%s}" % (",".join([str(x) for x in range(1, 165)]))
+
+    expert_prediction_streams = {}
+    for stem in args.expert_stem:
+        expert_files = {}
+        for f in glob.glob(stem + "*.txt"):
+            i = stem + regex.sub("", f)
+            expert_files[i] = f
+
+        expert_keys = sorted(expert_files.keys())
+        if args.max_experts and len(expert_keys) > args.max_experts:
+            random.shuffle(expert_keys)
+            expert_keys = expert_keys[:args.max_experts]
+        
+        for expert_key in expert_keys:
+            expert_prediction_streams[expert_key] = open(expert_files[expert_key])
+
+    sorted_expert_ids = sorted(expert_prediction_streams.keys())
+
+    if not args.csv:
+        print >>sys.stderr, sorted_expert_ids
+        print "@RELATION combined_experts"
+        print
+
+    for i in sorted_expert_ids:
+        if args.csv:
+            print >>sys.stderr, "%s,integer,discrete" % i
         else:
-            s.append(l.strip())
+            print "@ATTRIBUTE expert_%s %s" % (i, attr_cv)
+            
 
-    if last:
-        break
+    if args.csv:
+        print >>sys.stderr, "label,integer,discrete"
+    else:
+        print "@ATTRIBUTE label %s" % attr_cv
+        print
+        print "@data"
 
-    print ",".join(s)
+    last = False
+    while True:
+        s = []
+        for i in sorted_expert_ids:
+            l = expert_prediction_streams[i].readline()
+            if l == "":
+                if not last and len(s) != 0:
+                    raise IOError("Not all the files had the same number of predictions in them...")
+                else:
+                    last = True
+            else:
+                s.append(l.strip())
+
+        if label_stream == None:
+            s.append("-2")
+        else:
+            l = label_stream.readline()
+            if l == "" and not last:
+                raise IOError("Label file had fewer labels in it than predictions")
+            else:
+                s.append(l.strip())
+
+        if last:
+            break
+
+        print ",".join(s)
     
+
+if __name__ == "__main__":
+    main()
