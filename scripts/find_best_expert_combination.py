@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+import itertools
+import os
 import sys
 import re
 import subprocess
@@ -33,19 +35,20 @@ def write_arff(out, labels, expert_predictions, use_these_experts):
                     
         s.append(labels[i])
 
-        print ",".join(s)
+        print >>out, ",".join(s)
 
 def cross_validate(labels, expert_predictions, use_these_experts):
-    out = open("tmp.arff")
+    out = open("tmp.arff", "w")
     write_arff(out, labels, expert_predictions, use_these_experts)
     out.flush()
     out.close()
 
     cmd = ["waffles_learn", "crossvalidate", "-reps", "1", "-folds", "2", "tmp.arff", "decisiontree"]
-    waffles_out = subprocess.check_output(cmd).split("\n")
+    waffles_out = subprocess.check_output(cmd, stderr=subprocess.STDOUT).strip().split("\n")
+    #print "\n".join(waffles_out)
 
     #Attr: 100, Mean predictive accuracy: 0.24896, Deviation: 0.0015839191898581
-    acc = float(waffles_out.split()[5][:-1])
+    acc = float(waffles_out[-1].split()[5][:-1])
     return acc
 
 if len(sys.argv) < 3:
@@ -60,17 +63,18 @@ expert_predictions = {}
 expert_labels = {}
 for f in sys.argv[2:]:
     i = int(regex.sub("", f))
-    expert_prediction[i] = read_file(f)
+    expert_predictions[i] = read_file(f)
     expert_labels[i] = os.path.split(f)[-1]
 
 experts = sorted(expert_predictions.keys())
 print "Experts: %s" % experts
 print "r\tbest_experts\tbest_error\taverage_error"
 for r in range(1, len(experts)):
+    errors = []
     for use_these_experts in itertools.combinations(experts, r):
         errors.append((use_these_experts, cross_validate(labels, expert_predictions, use_these_experts)))
 
-    errors.sort(lambda x: x[1])
+    errors.sort(key=lambda x: x[1])
     average_error = numpy.average([x[1] for x in errors])
     best_experts = []
     for e in errors[-1][0]:

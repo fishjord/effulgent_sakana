@@ -7,16 +7,7 @@ if len(sys.argv) != 3:
     sys.exit(1)
 
 def write_pattern(pattern, label, out):
-    s = "{ "
-
-    for i in range(len(pattern)):
-        if pattern[i] == 0:
-            continue
-
-        s += "%s %s, " % (i + 1, pattern[i])
-
-    s += " %s %s}" % (len(pattern), label)
-    print >>out, s.strip()
+    print >>out, "%s,%s" % (pattern, label)
 
 def read_labels(fname):
     labels = []
@@ -28,23 +19,24 @@ def read_labels(fname):
     return labels
 
 def read_patterns(fname):
-    patterns = []
-    for line in open(sys.argv[1]):
-        lexemes = line.strip().split()
-        if len(lexemes) == 0:
-            continue
+    for line in open(fname):
+        yield ",".join(line.strip().split())
 
-        lexemes = [float(x) for x in lexemes]
-        
-        if len(patterns) > 0 and len(lexemes) != len(patterns[0]):
-            raise IOError("Unexpected number of tokens on line '%s'" % line)
-        
-        patterns.append(lexemes)
+labels = read_labels(sys.argv[2])
+header_written = False
+j = 0
+for pattern in read_patterns(sys.argv[1]):
+    if not header_written:
+        header_written = True
+        print "@RELATION %s" % sys.argv[1]
+        print
+        for i in range(len(pattern.split(","))):
+            print "@ATTRIBUTE feature_%s NUMERIC" % i
 
-    return patterns
-    
-patterns, labels = read_patterns(sys.argv[1]), read_labels(sys.argv[2])
+        print
+        print "@ATTRIBUTE label {%s}" % (",".join([str(i) for i in sorted(set(labels))]))
+        print
+        print "@data"
 
-for i in range(len(patterns)):
-    write_pattern(patterns[i], labels[i], sys.stdout)
-
+    print "%s,%s" % (pattern, labels[j])
+    j += 1
