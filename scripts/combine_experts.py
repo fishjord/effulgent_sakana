@@ -53,12 +53,13 @@ def main():
             print "@ATTRIBUTE expert_%s %s" % (i, attr_cv)
             
 
-    if args.csv:
-        print >>sys.stderr, "label,integer,discrete"
-    else:
-        print "@ATTRIBUTE label %s" % attr_cv
-        print
-        print "@data"
+    if label_stream != None:
+        if args.csv:
+            print >>sys.stderr, "label,integer,class"
+        else:
+            print "@ATTRIBUTE label %s" % attr_cv
+            print
+            print "@data"
 
     last = False
     while True:
@@ -73,9 +74,7 @@ def main():
             else:
                 s.append(l.strip())
 
-        if label_stream == None:
-            s.append("-2")
-        else:
+        if label_stream != None:
             l = label_stream.readline()
             if l == "" and not last:
                 raise IOError("Label file had fewer labels in it than predictions")

@@ -39,12 +39,12 @@ def predict(args):
         if line == "":
             continue
 
-        expert_predictions = [int(x) for x in line.split("\t")]
+        expert_predictions = [int(x) for x in line.split(",")]
         lineno += 1
         if expert_weights == None:
             expert_weights = [1.0] * len(expert_predictions)
         elif len(expert_weights) != len(expert_predictions):
-            raise IOError("Mismatched number of expert_weights and expert_predictions (line=%s)" % lineno)
+            raise IOError("Mismatched number of expert_weights [%s] and expert_predictions [%s] (line=%s)" % (len(expert_weights), len(expert_predictions), lineno))
 
         weighted_sums = dict()
         for expert in range(len(expert_predictions)):
@@ -62,7 +62,7 @@ def predict(args):
         pred = random.choice(best_prediction)
         s = "%s\t%s\t%0.3f\t%0.3f" % (lineno, pred, weighted_sums[pred], weighted_sums[pred] / sum(expert_weights))
         if expected_labels:
-            s += "\t%s\t%s\t%0.2f" % (expected_labels[pattern], pred == expected_labels[pattern], weighted_sums.get(expected_labels[pattern], 0))
+            s += "\t%s\t%s\t%0.3f\t%.3f" % (expected_labels[pattern], pred == expected_labels[pattern], weighted_sums.get(expected_labels[pattern], 0), weighted_sums.get(expected_labels[pattern], 0) / sum(expert_weights))
             if pred == expected_labels[pattern]:
                 correct += 1
         print s
@@ -70,29 +70,16 @@ def predict(args):
     if expected_labels:
         print "Accuracy: %s of %s (%0.2f%%)" % (correct, lineno, correct * 100 / float(lineno))
 
-def learn(args):
-    pass
-
 def main():
     parser = argparse.ArgumentParser()
-    sp = parser.add_subparsers()
 
-    hedge = sp.add_parser("learn", help="Learn expert weights using the hedge algorithm")
-    hedge.add_argument("--eta", dest="eta", type=float, help="Set stepsize, default = 1/sqrt(T)")
-    hedge.add_argument("weights", help="Write final weights here")
-    hedge.add_argument("labels", help="Labels for the input examples")
-    hedge.set_defaults(func=learn)
-
-    pred = sp.add_parser("predict", help="Predict labels for a set of inputs")
-    pred.add_argument("--labels", help="Labels for input examples for computing accuracy")
-    pred.add_argument("--weights", help="Read expert weights from file")
-    pred.set_defaults(func=predict)
+    parser.add_argument("--labels", help="Labels for input examples for computing accuracy")
+    parser.add_argument("--weights", help="Read expert weights from file")
 
     parser.add_argument("expert_predictions")
 
     args = parser.parse_args()
-    args.func(args)
-    
+    predict(args)
 
 if __name__ == "__main__":
     main()
